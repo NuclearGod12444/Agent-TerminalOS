@@ -203,8 +203,9 @@
                 case 'connect':
                     await typePrint("INITIALIZING SECURE UPLINK TO TSCPP...", "system");
                     await new Promise(r => setTimeout(r, 1000));
-                    window.open("https://nucleargod12444.github.io/TSCPP/index.html", "_blank");
-                    await typePrint("REDIRECTING TO EXTERNAL HUB...", "system");
+                    // THE IMPORTANT PART: Adding ?source=fbi_hq to the URL
+                    window.open("https://github.io", "_blank");
+                    await typePrint("UPLINK ESTABLISHED. HANDSHAKE SENT.", "system");
                     break;
 
                 case 'ls':
@@ -240,17 +241,7 @@
                         await typePrint("SNIFFING LOCAL DISCORD PACKETS...", "system");
                         await new Promise(r => setTimeout(r, 1500));
                         const names = ["User#4421", "Glitch_Hunter", "Admin_Void"];
-                        await typePrint(`INTERCEPTED: ${names[Math.floor(Math.random()*names.length)]} -> [ENCRYPTED DATA]`, "admin");
-                    }
-                    break;
-
-                case 'locate':
-                    if (!isAdmin) await typePrint("ERR: ROOT ACCESS REQUIRED", "error");
-                    else {
-                        const locs = ["Langley, VA", "Moscow, RU", "Berlin, DE"];
-                        await typePrint(`TRIANGULATING SIGNAL...`, "system");
-                        await new Promise(r => setTimeout(r, 1000));
-                        await typePrint(`TARGET FOUND: ${locs[Math.floor(Math.random()*locs.length)]}`, "admin");
+                        await typePrint(`INTERCEPTED: ${names[Math.floor(Math.random()*names.length)]} -> [DATA]`, "admin");
                     }
                     break;
 
