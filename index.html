@@ -202,14 +202,20 @@
                     }
                     break;
 
-                case 'connect':
-                    await typePrint("INITIALIZING SECURE UPLINK TO TSCPP...", "system");
-                    await new Promise(r => setTimeout(r, 1000));
-                    // THE IMPORTANT PART: Adding ?source=fbi_hq to the URL
-                    window.open("https://nucleargod12444.github.io/TSCPP/index.html?source=fbi_hq", "_blank");
-                    await typePrint("UPLINK ESTABLISHED. HANDSHAKE SENT.", "system");
-                    break;
 
+                case 'connect':
+                    if (args[1] === 'tscpp' && args[2] === 'main') {
+                        await typePrint("INITIALIZING SECURE UPLINK TO TSCPP_MAIN...", "system");
+                        await new Promise(r => setTimeout(r, 1000));
+        
+                        window.open("https://nucleargod12444.github.io/TSCPP/index.html?source=fbi_hq", "_blank");
+        
+                        await typePrint("UPLINK ESTABLISHED. HANDSHAKE SENT.", "system");
+                    } else {
+                        await typePrint("ERR: SPECIFY TARGET (Usage: connect tscpp main)", "error");
+                    }
+                    break;
+                   
                 case 'ls':
                     await typePrint(Object.keys(files).join("   ") || "No files.");
                     break;
