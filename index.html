@@ -196,33 +196,29 @@
 
             switch(cmd) {
                 case 'help':
-                    await typePrint("GENERAL: ls, cat [file], clear, login, status, connect");
+                    await typePrint("GENERAL: ls, cat [file], clear, login, status, connect tscpp main");
                     if (isAdmin) {
                         await typePrint("ROOT TOOLS: write [file] [text], download [file], intercept, locate [target], logout", "admin");
                     }
                     break;
 
-
                 case 'connect':
                     if (args[1] === 'tscpp' && args[2] === 'main') {
                         await typePrint("INITIALIZING SECURE UPLINK TO TSCPP_MAIN...", "system");
-                        await new Promise(r => setTimeout(r, 1000));
-        
-                        window.open("https://nucleargod12444.github.io/TSCPP/index.html?source=fbi_hq", "_blank");
-        
-                        await typePrint("UPLINK ESTABLISHED. HANDSHAKE SENT.", "system");
+                        await new Promise(res => setTimeout(res, 1000));
+                        window.open("https://github.io", "_blank");
+                        await typePrint("UPLINK ESTABLISHED. HANDSHAKE SENT.", "admin");
                     } else {
-                        await typePrint("ERR: SPECIFY TARGET (Usage: connect tscpp main)", "error");
+                        await typePrint("USAGE: connect tscpp main", "error");
                     }
                     break;
-                   
+
                 case 'ls':
-                    await typePrint(Object.keys(files).join("   ") || "No files.");
+                    await typePrint(Object.keys(files).join("   ") || "No files found.");
                     break;
 
                 case 'cat':
-                    const fileName = args[1];
-                    if (files[fileName]) await typePrint(files[fileName]);
+                    if (files[args[1]]) await typePrint(files[args[1]]);
                     else await typePrint("ERR: FILE NOT FOUND", "error");
                     break;
 
@@ -234,8 +230,6 @@
                     }
                     break;
 
-
-
                 case 'logout':
                     isAdmin = false;
                     promptSpan.innerText = "AGENT@FBI:~$";
@@ -245,18 +239,67 @@
                     await typePrint("SESSION RESET. PRIVILEGES REVOKED.");
                     break;
 
-                case 'intercept':
-                    if (!isAdmin) await typePrint("ERR: ROOT ACCESS REQUIRED", "error");
-                    else {
-                        await typePrint("SNIFFING LOCAL DISCORD PACKETS...", "system");
-                        await new Promise(r => setTimeout(r, 1500));
-                        const names = ["User#4421", "Glitch_Hunter", "Admin_Void"];
-                        await typePrint(`INTERCEPTED: ${names[Math.floor(Math.random()*names.length)]} -> [DATA]`, "admin");
+                case 'clear':
+                    output.innerHTML = '';
+                    break;
+
+                case 'status':
+                    await typePrint("CPU: 1.2% | NETWORK: ENCRYPTED | AUTH: " + (isAdmin ? "ROOT" : "AGENT"));
+                    break;
+
+                case 'write':
+                    if (!isAdmin) {
+                        await typePrint("PERM_ERR: ROOT ACCESS REQUIRED", "error");
+                    } else if (args.length < 3) {
+                        await typePrint("USAGE: write [filename] [content]", "error");
+                    } else {
+                        const filename = args[1];
+                        const content = args.slice(2).join(' ');
+                        files[filename] = content;
+                        saveFiles();
+                        await typePrint(`DATA ENCRYPTED. FILE '${filename}' SAVED.`, "admin");
                     }
                     break;
 
-                case 'clear':
-                    output.innerHTML = '';
+                case 'locate':
+                    if (!isAdmin) {
+                        await typePrint("PERM_ERR: ROOT ACCESS REQUIRED", "error");
+                    } else {
+                        const target = args[1] || "UNKNOWN_SIGNAL";
+                        await typePrint(`TRIANGULATING SIGNAL FOR: ${target.toUpperCase()}...`, "system");
+                        await new Promise(r => setTimeout(r, 1500));
+                        const locs = ["Langley, VA", "Moscow, RU", "Berlin, DE", "Beijing, CN"];
+                        const found = locs[Math.floor(Math.random() * locs.length)];
+                        await typePrint(`SIGNAL ACQUIRED: ${found}`, "admin");
+                        await typePrint(`COORDS: ${(Math.random()*180-90).toFixed(4)}, ${(Math.random()*360-180).toFixed(4)}`, "admin");
+                    }
+                    break;
+
+                case 'intercept':
+                    if (!isAdmin) {
+                        await typePrint("PERM_ERR: ROOT ACCESS REQUIRED", "error");
+                    } else {
+                        await typePrint("SNIFFING LOCAL PACKETS...", "system");
+                        await new Promise(r => setTimeout(r, 1500));
+                        const users = ["User#7721", "Shadow_Admin", "Glitch_Tech"];
+                        await typePrint(`INTERCEPTED: ${users[Math.floor(Math.random()*users.length)]} -> [DATA STREAM]`, "admin");
+                    }
+                    break;
+
+                case 'download':
+                    if (!isAdmin) {
+                        await typePrint("PERM_ERR: ROOT ACCESS REQUIRED", "error");
+                    } else if (!files[args[1]]) {
+                        await typePrint("ERR: FILE NOT FOUND", "error");
+                    } else {
+                        const blob = new Blob([files[args[1]]], { type: 'text/plain' });
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = args[1];
+                        a.click();
+                        await typePrint("SUCCESS: FILE EXPORTED.", "system");
+                    }
                     break;
 
                 default:
