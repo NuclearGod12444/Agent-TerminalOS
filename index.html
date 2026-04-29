@@ -198,7 +198,7 @@
                 case 'help':
                     await typePrint("GENERAL: ls, cat [file], clear, login, status, connect");
                     if (isAdmin) {
-                        await typePrint("ROOT TOOLS: write [file] [text], download [file], intercept, locate, logout", "admin");
+                        await typePrint("ROOT TOOLS: write [file] [text], download [file], intercept, locate [target], logout", "admin");
                     }
                     break;
 
@@ -233,6 +233,8 @@
                         isWaitingForPassword = true;
                     }
                     break;
+
+
 
                 case 'logout':
                     isAdmin = false;
