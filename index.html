@@ -201,7 +201,8 @@
                 default: await typePrint(`ERR: '${cmd}' NOT RECOGNIZED`, "error");
             }
         }
-        setInterval(() => { document.getElementById('digital-clock').innerText = new Date().toLocaleTimeString(); }, 1000);
+        setInterval(() => {document.getElementById('digital-clock').innerText = new Date().toLocaleTimeString('en-GB', { hour12: false }); }, 1000);
+
     </script>
 </body>
 </html>
