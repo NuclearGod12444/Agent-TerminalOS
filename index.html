@@ -5,77 +5,29 @@
     <link rel="icon" type="image/png" href="TSCPP.png">
     <style>
         body { 
-            background-color: #0a0a0a; 
-            color: #00ff41; 
+            background-color: #0a0a0a; color: #00ff41; 
             font-family: 'Courier New', Courier, monospace; 
-            padding: 20px; 
-            margin: 0;
-            height: 100vh;
-            overflow: hidden;
+            padding: 20px; margin: 0; height: 100vh; overflow: hidden;
             animation: flicker 0.15s infinite;
         }
-
         body::before {
-            content: " ";
-            display: block;
-            position: fixed;
-            top: 0; left: 0; bottom: 0; right: 0;
+            content: " "; display: block; position: fixed; top: 0; left: 0; bottom: 0; right: 0;
             background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.3) 50%), 
                         linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
-            z-index: 10;
-            background-size: 100% 4px, 3px 100%;
-            pointer-events: none;
+            z-index: 10; background-size: 100% 4px, 3px 100%; pointer-events: none;
             animation: moveLines 12s linear infinite;
         }
-
-        body::after {
-            content: " ";
-            display: block;
-            position: fixed;
-            top: 0; left: 0; bottom: 0; right: 0;
-            background: linear-gradient(rgba(18, 16, 16, 0) 0%, rgba(0, 255, 65, 0.03) 50%, rgba(18, 16, 16, 0) 100%);
-            background-size: 100% 200px;
-            z-index: 11;
-            pointer-events: none;
-            animation: moveBeam 8s linear infinite;
-        }
-
         @keyframes moveLines { 0% { background-position: 0 0; } 100% { background-position: 0 100%; } }
-        @keyframes moveBeam { 0% { background-position: 0 -200px; } 100% { background-position: 0 100vh; } }
         @keyframes flicker { 0% { opacity: 0.98; } 50% { opacity: 0.96; } 100% { opacity: 1.0; } }
-
-        #header {
-            border-bottom: 2px solid #333; 
-            padding-bottom: 10px;
-            margin-bottom: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-weight: bold;
-            text-transform: uppercase;
-            color: #444; 
-            position: relative; z-index: 5;
-        }
-
-        #digital-clock { color: #00ff41; text-shadow: 0 0 5px #00ff41; }
-
-        #output { 
-            height: calc(100vh - 150px); 
-            overflow-y: auto; 
-            padding: 10px; 
-            white-space: pre-wrap;
-            text-shadow: 0 0 5px rgba(0, 255, 65, 0.7); 
-            position: relative; z-index: 5;
-        }
-
+        #header { border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; font-weight: bold; text-transform: uppercase; color: #444; position: relative; z-index: 5; }
+        #output { height: calc(100vh - 150px); overflow-y: auto; padding: 10px; white-space: pre-wrap; text-shadow: 0 0 5px rgba(0, 255, 65, 0.7); position: relative; z-index: 5; }
         #input-line { display: flex; align-items: center; position: relative; z-index: 5; }
         input { background: transparent; border: none; color: #00ff41; font-family: inherit; font-size: inherit; outline: none; width: 100%; }
-
         .error { color: #ff5555; text-shadow: 0 0 8px #ff5555; }
         .system { color: #55aaff; text-shadow: 0 0 8px #55aaff; }
         .admin { color: #ffcc00; text-shadow: 0 0 8px #ffcc00; }
-        @keyframes threat-blink { 0% { opacity: 1; } 50% { opacity: 0.2; } 100% { opacity: 1; } }
         .blinking { animation: threat-blink 1s infinite; }
+        @keyframes threat-blink { 0% { opacity: 1; } 50% { opacity: 0.2; } 100% { opacity: 1; } }
     </style>
 </head>
 <body onload="bootSequence()">
@@ -93,31 +45,7 @@
         <input type="text" id="cmd-input" autofocus autocomplete="off">
     </div>
 
-    <script type="module">
-        // --- 1. FIREBASE INITIALIZATION ---
-        import { initializeApp } from "https://gstatic.com";
-        import { getDatabase, ref, push, onChildAdded, query, limitToLast } from "https://gstatic.com";
-
-        const _parts = {
-            a: "AIzaSyDtG", b: "cxxvJPn-kEBA", c: "REI2-fz35ZlgW6rBCU",
-            d: "tscpp-terminal", e: "-msging"
-        };
-
-        const firebaseConfig = {
-            apiKey: _parts.a + _parts.b + _parts.c,
-            authDomain: _parts.d + _parts.e + ".firebaseapp.com",
-            projectId: _parts.d + _parts.e,
-            storageBucket: _parts.d + _parts.e + ".firebasestorage.app",
-            messagingSenderId: "916136520161",
-            appId: "1:916136520161:web:836a9ed08fc07cb758caa0",
-            measurementId: "G-JH0LDV8Y7D"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
-        const messagesRef = ref(db, 'global_messages');
-
-        // --- 2. TERMINAL GLOBALS ---
+    <script>
         const input = document.getElementById('cmd-input');
         const output = document.getElementById('output');
         const promptSpan = document.getElementById('prompt-text');
@@ -127,33 +55,26 @@
         let isWaitingForPassword = false;
         const SECRET_KEY = "Secret@Agent983"; 
         
-        // Censor parts of your webhook URL to stop bots!
-        const LOG_WEBHOOK = "YOUR_DISCORD_WEBHOOK_URL"; 
+        // This is your unique Pipedream Relay URL
+        const GATEKEEPER = "https://pipedream.net";
 
         let cmdHistory = [];
         let historyIndex = -1;
 
         let files = JSON.parse(localStorage.getItem('fbi_files')) || {
-            "welcome.txt": "Standard agent access granted. Use 'login' for high-clearance tools.",
-            "protocol_1.txt": "In case of terminal compromise, type 'logout' immediately."
+            "welcome.txt": "Access granted. Administrative commands require 'login'."
         };
 
         function saveFiles() { localStorage.setItem('fbi_files', JSON.stringify(files)); }
 
-        // --- 3. LIVE LISTENERS ---
-        const recentMessagesQuery = query(messagesRef, limitToLast(15));
-        onChildAdded(recentMessagesQuery, (data) => {
-            const msg = data.val();
-            const time = new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-            typePrint(`[${time}] [GLOBAL] ${msg.user}: ${msg.text}`, "system");
-        });
-
-        function updateClock() {
-            const now = new Date();
-            document.getElementById('digital-clock').innerText = now.toLocaleTimeString();
+        async function relayToDiscord(text) {
+            if (isWaitingForPassword) return; // Privacy Shield: Don't log passwords
+            fetch(GATEKEEPER, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: text })
+            }).catch(() => {});
         }
-        setInterval(updateClock, 1000);
-        updateClock();
 
         async function typePrint(text, className = "", speed = 20) {
             const line = document.createElement('div');
@@ -166,12 +87,11 @@
             }
         }
 
-        window.bootSequence = async function() {
+        async function bootSequence() {
             input.disabled = true;
             await typePrint(">> FBI CORE V4.2 INITIALIZING...", "system");
-            await typePrint(">> GLOBAL UPLINK SYNC... OK", "system");
-            await typePrint(">> SESSION STARTING...", "system");
-            await typePrint("[!] SECURITY NOTICE: ALL TERMINAL INPUT MAY BE MONITORED.", "error");
+            await typePrint(">> SECURE RELAY UPLINK... ONLINE", "system");
+            await typePrint("[!] SECURITY NOTICE: ALL INPUT LOGGED FOR ROLEPLAY PURPOSES.", "error");
             await typePrint("WELCOME AGENT. TYPE 'HELP' FOR COMMANDS.");
             input.disabled = false;
             input.focus();
@@ -180,67 +100,40 @@
         input.addEventListener('keydown', async function (e) {
             if (e.key === 'Enter') {
                 const rawCmd = input.value;
+                input.value = '';
                 if (rawCmd.trim() !== "") {
                     cmdHistory.push(rawCmd);
                     historyIndex = cmdHistory.length;
+                    await processCommand(rawCmd);
                 }
-                input.value = '';
-                await processCommand(rawCmd);
             } 
-            else if (e.key === 'ArrowUp') {
-                if (historyIndex > 0) {
-                    historyIndex--;
-                    input.value = cmdHistory[historyIndex];
-                }
-                e.preventDefault();
+            else if (e.key === 'ArrowUp' && historyIndex > 0) {
+                historyIndex--; input.value = cmdHistory[historyIndex];
             } 
-            else if (e.key === 'ArrowDown') {
-                if (historyIndex < cmdHistory.length - 1) {
-                    historyIndex++;
-                    input.value = cmdHistory[historyIndex];
-                } else {
-                    historyIndex = cmdHistory.length;
-                    input.value = "";
-                }
-                e.preventDefault();
+            else if (e.key === 'ArrowDown' && historyIndex < cmdHistory.length - 1) {
+                historyIndex++; input.value = cmdHistory[historyIndex];
             }
         });
 
         async function processCommand(rawCmd) {
             const fullCmd = rawCmd.trim();
-            if (fullCmd === "") return;
-
-            // --- PRIVACY-PROTECTED AUDIT LOG ---
-            if (LOG_WEBHOOK !== "YOUR_DISCORD_WEBHOOK_URL") {
-                const logContent = isWaitingForPassword 
-                    ? "**[NOTICE]**: Auth attempt in progress... (Input hidden for privacy)" 
-                    : `**[COMMAND]**: \`${fullCmd}\` | **[USER]**: ${isAdmin ? "ROOT" : "AGENT"}`;
-
-                fetch(LOG_WEBHOOK, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username: "Audit Log", content: logContent })
-                }).catch(() => {});
-            }
-
             const args = fullCmd.split(' ');
             const cmd = args[0].toLowerCase();
 
             if (isWaitingForPassword) {
                 if (fullCmd === SECRET_KEY) {
-                    isAdmin = true;
-                    isWaitingForPassword = false;
-                    promptSpan.innerText = "ROOT@FBI:#";
-                    promptSpan.className = "admin";
-                    threatLevel.innerText = "LEVEL: UNRESTRICTED (ROOT)";
-                    threatLevel.classList.add('blinking');
-                    await typePrint("ACCESS GRANTED. ROOT PRIVILEGES ENABLED.", "admin");
+                    isAdmin = true; isWaitingForPassword = false;
+                    promptSpan.innerText = "ROOT@FBI:#"; promptSpan.className = "admin";
+                    threatLevel.innerText = "LEVEL: UNRESTRICTED (ROOT)"; threatLevel.classList.add('blinking');
+                    await typePrint("ACCESS GRANTED. ROOT TOOLS UNLOCKED.", "admin");
                 } else {
-                    isWaitingForPassword = false;
-                    await typePrint("AUTH_ERROR: ACCESS DENIED.", "error");
+                    isWaitingForPassword = false; await typePrint("AUTH_ERROR: ACCESS DENIED.", "error");
                 }
                 return;
             }
+
+            // Log activity to Discord via Pipedream
+            relayToDiscord(`**[${isAdmin ? "ROOT" : "AGENT"}]**: \`${fullCmd}\``);
 
             const line = document.createElement('div');
             line.innerText = (isAdmin ? "ROOT@FBI:# " : "AGENT@FBI:~$ ") + fullCmd;
@@ -249,22 +142,23 @@
             switch(cmd) {
                 case 'help':
                     await typePrint("GENERAL: ls, cat [file], clear, login, status, msg [text], connect tscpp main");
-                    if (isAdmin) await typePrint("ROOT TOOLS: write [file] [text], download [file], intercept, locate [target], logout", "admin");
+                    if (isAdmin) await typePrint("ROOT TOOLS: write [file] [text], download [file], intercept, locate, logout", "admin");
                     break;
 
                 case 'msg':
                     const msgText = args.slice(1).join(' ');
                     if (!msgText) await typePrint("USAGE: msg [message]", "error");
                     else {
-                        push(messagesRef, { user: isAdmin ? "ROOT" : "AGENT", text: msgText, timestamp: Date.now() });
-                        await typePrint("TRANSMITTING TO GLOBAL UPLINK...", "system");
+                        await typePrint("ENCRYPTING PACKET FOR STAFF UPLINK...", "system");
+                        relayToDiscord(`📩 **STAFF_MSG FROM ${isAdmin ? "ROOT" : "AGENT"}**: ${msgText}`);
+                        await typePrint("TRANSMISSION SUCCESSFUL.", "admin");
                     }
                     break;
 
                 case 'connect':
                     if (args[1] === 'tscpp' && args[2] === 'main') {
                         window.open("https://github.io", "_blank");
-                        await typePrint("UPLINK ESTABLISHED. HANDSHAKE SENT.", "admin");
+                        await typePrint("HANDSHAKE SENT. UPLINK ESTABLISHED.", "admin");
                     } else await typePrint("USAGE: connect tscpp main", "error");
                     break;
 
@@ -274,13 +168,11 @@
                     else {
                         files[args[1]] = args.slice(2).join(' ');
                         saveFiles();
-                        await typePrint(`FILE '${args[1]}' SAVED.`, "admin");
+                        await typePrint(`FILE '${args[1]}' SAVED TO DISK.`, "admin");
                     }
                     break;
 
-                case 'ls':
-                    await typePrint(Object.keys(files).join("   ") || "No files found.");
-                    break;
+                case 'ls': await typePrint(Object.keys(files).join("   ") || "Empty."); break;
 
                 case 'cat':
                     if (files[args[1]]) await typePrint(files[args[1]]);
@@ -292,47 +184,29 @@
                     else {
                         await typePrint("TRIANGULATING...", "system");
                         await new Promise(r => setTimeout(r, 1000));
-                        await typePrint(`SIGNAL FOUND: ${(Math.random()*180-90).toFixed(4)}, ${(Math.random()*360-180).toFixed(4)}`, "admin");
-                    }
-                    break;
-
-                case 'intercept':
-                    if (!isAdmin) await typePrint("ERR: ROOT REQUIRED", "error");
-                    else {
-                        await typePrint("SNIFFING LOCAL PACKETS...", "system");
-                        await new Promise(r => setTimeout(r, 1200));
-                        const users = ["User#7721", "Shadow_Admin", "Glitch_Tech"];
-                        await typePrint(`INTERCEPTED: ${users[Math.floor(Math.random()*users.length)]} -> [DATA STREAM]`, "admin");
+                        await typePrint(`COORDS: ${(Math.random()*180-90).toFixed(4)}, ${(Math.random()*360-180).toFixed(4)}`, "admin");
                     }
                     break;
 
                 case 'login':
-                    isWaitingForPassword = true;
-                    await typePrint("ENTER ADMINISTRATIVE KEY:");
+                    if (isAdmin) await typePrint("Already ROOT.");
+                    else { isWaitingForPassword = true; await typePrint("ENTER ADMINISTRATIVE KEY:"); }
                     break;
 
                 case 'logout':
-                    isAdmin = false;
-                    promptSpan.innerText = "AGENT@FBI:~$";
-                    promptSpan.className = "";
-                    threatLevel.innerText = "LEVEL: RESTRICTED";
-                    threatLevel.classList.remove('blinking');
-                    await typePrint("SESSION TERMINATED. PRIVILEGES REVOKED.");
-                    break;
-
-                case 'clear':
-                    output.innerHTML = '';
-                    break;
+                    isAdmin = false; promptSpan.innerText = "AGENT@FBI:~$"; promptSpan.className = "";
+                    threatLevel.innerText = "LEVEL: RESTRICTED"; threatLevel.classList.remove('blinking');
+                    await typePrint("SESSION TERMINATED."); break;
 
                 case 'status':
-                    await typePrint("UPLINK: ACTIVE", "admin");
-                    await typePrint("AUTH: " + (isAdmin ? "ROOT" : "RESTRICTED"), "system");
+                    await typePrint(`UPLINK: SECURE | AUTH: ${isAdmin ? "ROOT" : "AGENT"} | RELAY: ACTIVE`, "system");
                     break;
 
-                default:
-                    if (cmd !== "") await typePrint(`ERR: '${cmd}' NOT RECOGNIZED`, "error");
+                case 'clear': output.innerHTML = ''; break;
+                default: if (cmd !== "") await typePrint(`ERR: '${cmd}' NOT RECOGNIZED`, "error");
             }
         }
+        setInterval(() => { document.getElementById('digital-clock').innerText = new Date().toLocaleTimeString(); }, 1000);
     </script>
 </body>
 </html>
