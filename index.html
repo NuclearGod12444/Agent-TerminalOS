@@ -93,7 +93,31 @@
         <input type="text" id="cmd-input" autofocus autocomplete="off">
     </div>
 
-    <script>
+    <script type="module">
+        // --- 1. FIREBASE INITIALIZATION ---
+        import { initializeApp } from "https://gstatic.com";
+        import { getDatabase, ref, push, onChildAdded, query, limitToLast } from "https://gstatic.com";
+
+        const _parts = {
+            a: "AIzaSyDtG", b: "cxxvJPn-kEBA", c: "REI2-fz35ZlgW6rBCU",
+            d: "tscpp-terminal", e: "-msging"
+        };
+
+        const firebaseConfig = {
+            apiKey: _parts.a + _parts.b + _parts.c,
+            authDomain: _parts.d + _parts.e + ".firebaseapp.com",
+            projectId: _parts.d + _parts.e,
+            storageBucket: _parts.d + _parts.e + ".firebasestorage.app",
+            messagingSenderId: "916136520161",
+            appId: "1:916136520161:web:836a9ed08fc07cb758caa0",
+            measurementId: "G-JH0LDV8Y7D"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const messagesRef = ref(db, 'global_messages');
+
+        // --- 2. TERMINAL GLOBALS ---
         const input = document.getElementById('cmd-input');
         const output = document.getElementById('output');
         const promptSpan = document.getElementById('prompt-text');
@@ -103,6 +127,9 @@
         let isWaitingForPassword = false;
         const SECRET_KEY = "Secret@Agent983"; 
         
+        // Censor parts of your webhook URL to stop bots!
+        const LOG_WEBHOOK = "YOUR_DISCORD_WEBHOOK_URL"; 
+
         let cmdHistory = [];
         let historyIndex = -1;
 
@@ -112,6 +139,14 @@
         };
 
         function saveFiles() { localStorage.setItem('fbi_files', JSON.stringify(files)); }
+
+        // --- 3. LIVE LISTENERS ---
+        const recentMessagesQuery = query(messagesRef, limitToLast(15));
+        onChildAdded(recentMessagesQuery, (data) => {
+            const msg = data.val();
+            const time = new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            typePrint(`[${time}] [GLOBAL] ${msg.user}: ${msg.text}`, "system");
+        });
 
         function updateClock() {
             const now = new Date();
@@ -131,11 +166,12 @@
             }
         }
 
-        async function bootSequence() {
+        window.bootSequence = async function() {
             input.disabled = true;
             await typePrint(">> FBI CORE V4.2 INITIALIZING...", "system");
+            await typePrint(">> GLOBAL UPLINK SYNC... OK", "system");
             await typePrint(">> SESSION STARTING...", "system");
-            await typePrint("ATTENTION: DO NOT TYPE ANY SENSITIVE INFORMATION IN THIS TERMINAL, AS IT COULD BE LOGGED SOMEWHERE, YOU JUST NEVER KNOW!!.");
+            await typePrint("[!] SECURITY NOTICE: ALL TERMINAL INPUT MAY BE MONITORED.", "error");
             await typePrint("WELCOME AGENT. TYPE 'HELP' FOR COMMANDS.");
             input.disabled = false;
             input.focus();
@@ -172,6 +208,21 @@
 
         async function processCommand(rawCmd) {
             const fullCmd = rawCmd.trim();
+            if (fullCmd === "") return;
+
+            // --- PRIVACY-PROTECTED AUDIT LOG ---
+            if (LOG_WEBHOOK !== "YOUR_DISCORD_WEBHOOK_URL") {
+                const logContent = isWaitingForPassword 
+                    ? "**[NOTICE]**: Auth attempt in progress... (Input hidden for privacy)" 
+                    : `**[COMMAND]**: \`${fullCmd}\` | **[USER]**: ${isAdmin ? "ROOT" : "AGENT"}`;
+
+                fetch(LOG_WEBHOOK, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: "Audit Log", content: logContent })
+                }).catch(() => {});
+            }
+
             const args = fullCmd.split(' ');
             const cmd = args[0].toLowerCase();
 
@@ -183,10 +234,10 @@
                     promptSpan.className = "admin";
                     threatLevel.innerText = "LEVEL: UNRESTRICTED (ROOT)";
                     threatLevel.classList.add('blinking');
-                    await typePrint("ACCESS GRANTED. LEVEL 4 INTEL TOOLS UNLOCKED.", "admin");
+                    await typePrint("ACCESS GRANTED. ROOT PRIVILEGES ENABLED.", "admin");
                 } else {
                     isWaitingForPassword = false;
-                    await typePrint("AUTH_ERROR: UNAUTHORIZED ACCESS ATTEMPT LOGGED.", "error");
+                    await typePrint("AUTH_ERROR: ACCESS DENIED.", "error");
                 }
                 return;
             }
@@ -197,20 +248,33 @@
 
             switch(cmd) {
                 case 'help':
-                    await typePrint("GENERAL: ls, cat [file], clear, login, status, connect tscpp main");
-                    if (isAdmin) {
-                        await typePrint("ROOT TOOLS: write [file] [text], download [file], intercept, locate [target], logout", "admin");
+                    await typePrint("GENERAL: ls, cat [file], clear, login, status, msg [text], connect tscpp main");
+                    if (isAdmin) await typePrint("ROOT TOOLS: write [file] [text], download [file], intercept, locate [target], logout", "admin");
+                    break;
+
+                case 'msg':
+                    const msgText = args.slice(1).join(' ');
+                    if (!msgText) await typePrint("USAGE: msg [message]", "error");
+                    else {
+                        push(messagesRef, { user: isAdmin ? "ROOT" : "AGENT", text: msgText, timestamp: Date.now() });
+                        await typePrint("TRANSMITTING TO GLOBAL UPLINK...", "system");
                     }
                     break;
 
                 case 'connect':
                     if (args[1] === 'tscpp' && args[2] === 'main') {
-                        await typePrint("INITIALIZING SECURE UPLINK TO TSCPP_MAIN...", "system");
-                        await new Promise(res => setTimeout(res, 1000));
                         window.open("https://github.io", "_blank");
                         await typePrint("UPLINK ESTABLISHED. HANDSHAKE SENT.", "admin");
-                    } else {
-                        await typePrint("USAGE: connect tscpp main", "error");
+                    } else await typePrint("USAGE: connect tscpp main", "error");
+                    break;
+
+                case 'write':
+                    if (!isAdmin) await typePrint("ERR: ROOT REQUIRED", "error");
+                    else if (args.length < 3) await typePrint("USAGE: write [file] [text]", "error");
+                    else {
+                        files[args[1]] = args.slice(2).join(' ');
+                        saveFiles();
+                        await typePrint(`FILE '${args[1]}' SAVED.`, "admin");
                     }
                     break;
 
@@ -223,12 +287,28 @@
                     else await typePrint("ERR: FILE NOT FOUND", "error");
                     break;
 
-                case 'login':
-                    if (isAdmin) await typePrint("Already logged in as ROOT.");
+                case 'locate':
+                    if (!isAdmin) await typePrint("ERR: ROOT REQUIRED", "error");
                     else {
-                        await typePrint("ENTER ADMINISTRATIVE KEY:");
-                        isWaitingForPassword = true;
+                        await typePrint("TRIANGULATING...", "system");
+                        await new Promise(r => setTimeout(r, 1000));
+                        await typePrint(`SIGNAL FOUND: ${(Math.random()*180-90).toFixed(4)}, ${(Math.random()*360-180).toFixed(4)}`, "admin");
                     }
+                    break;
+
+                case 'intercept':
+                    if (!isAdmin) await typePrint("ERR: ROOT REQUIRED", "error");
+                    else {
+                        await typePrint("SNIFFING LOCAL PACKETS...", "system");
+                        await new Promise(r => setTimeout(r, 1200));
+                        const users = ["User#7721", "Shadow_Admin", "Glitch_Tech"];
+                        await typePrint(`INTERCEPTED: ${users[Math.floor(Math.random()*users.length)]} -> [DATA STREAM]`, "admin");
+                    }
+                    break;
+
+                case 'login':
+                    isWaitingForPassword = true;
+                    await typePrint("ENTER ADMINISTRATIVE KEY:");
                     break;
 
                 case 'logout':
@@ -237,7 +317,7 @@
                     promptSpan.className = "";
                     threatLevel.innerText = "LEVEL: RESTRICTED";
                     threatLevel.classList.remove('blinking');
-                    await typePrint("SESSION RESET. PRIVILEGES REVOKED.");
+                    await typePrint("SESSION TERMINATED. PRIVILEGES REVOKED.");
                     break;
 
                 case 'clear':
@@ -245,66 +325,12 @@
                     break;
 
                 case 'status':
-                    await typePrint("CPU: 1.2% | NETWORK: ENCRYPTED | AUTH: " + (isAdmin ? "ROOT" : "AGENT"));
-                    break;
-
-                case 'write':
-                    if (!isAdmin) {
-                        await typePrint("PERM_ERR: ROOT ACCESS REQUIRED", "error");
-                    } else if (args.length < 3) {
-                        await typePrint("USAGE: write [filename] [content]", "error");
-                    } else {
-                        const filename = args[1];
-                        const content = args.slice(2).join(' ');
-                        files[filename] = content;
-                        saveFiles();
-                        await typePrint(`DATA ENCRYPTED. FILE '${filename}' SAVED.`, "admin");
-                    }
-                    break;
-
-                case 'locate':
-                    if (!isAdmin) {
-                        await typePrint("PERM_ERR: ROOT ACCESS REQUIRED", "error");
-                    } else {
-                        const target = args[1] || "UNKNOWN_SIGNAL";
-                        await typePrint(`TRIANGULATING SIGNAL FOR: ${target.toUpperCase()}...`, "system");
-                        await new Promise(r => setTimeout(r, 1500));
-                        const locs = ["Langley, VA", "Moscow, RU", "Berlin, DE", "Beijing, CN"];
-                        const found = locs[Math.floor(Math.random() * locs.length)];
-                        await typePrint(`SIGNAL ACQUIRED: ${found}`, "admin");
-                        await typePrint(`COORDS: ${(Math.random()*180-90).toFixed(4)}, ${(Math.random()*360-180).toFixed(4)}`, "admin");
-                    }
-                    break;
-
-                case 'intercept':
-                    if (!isAdmin) {
-                        await typePrint("PERM_ERR: ROOT ACCESS REQUIRED", "error");
-                    } else {
-                        await typePrint("SNIFFING LOCAL PACKETS...", "system");
-                        await new Promise(r => setTimeout(r, 1500));
-                        const users = ["User#7721", "Shadow_Admin", "Glitch_Tech"];
-                        await typePrint(`INTERCEPTED: ${users[Math.floor(Math.random()*users.length)]} -> [DATA STREAM]`, "admin");
-                    }
-                    break;
-
-                case 'download':
-                    if (!isAdmin) {
-                        await typePrint("PERM_ERR: ROOT ACCESS REQUIRED", "error");
-                    } else if (!files[args[1]]) {
-                        await typePrint("ERR: FILE NOT FOUND", "error");
-                    } else {
-                        const blob = new Blob([files[args[1]]], { type: 'text/plain' });
-                        const url = window.URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = args[1];
-                        a.click();
-                        await typePrint("SUCCESS: FILE EXPORTED.", "system");
-                    }
+                    await typePrint("UPLINK: ACTIVE", "admin");
+                    await typePrint("AUTH: " + (isAdmin ? "ROOT" : "RESTRICTED"), "system");
                     break;
 
                 default:
-                    if(cmd !== "") await typePrint("ERR: COMMAND NOT RECOGNIZED.", "error");
+                    if (cmd !== "") await typePrint(`ERR: '${cmd}' NOT RECOGNIZED`, "error");
             }
         }
     </script>
