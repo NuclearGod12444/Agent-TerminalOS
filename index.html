@@ -55,8 +55,7 @@
         let isWaitingForPassword = false;
         const SECRET_KEY = "Secret@Agent983"; 
         
-        // This is your unique Pipedream Relay URL
-        const GATEKEEPER = "https://pipedream.net";
+        const GATEKEEPER = "https://eoospzeqxs4diuy.m.pipedream.net";
 
         let cmdHistory = [];
         let historyIndex = -1;
@@ -68,7 +67,7 @@
         function saveFiles() { localStorage.setItem('fbi_files', JSON.stringify(files)); }
 
         async function relayToDiscord(text) {
-            if (isWaitingForPassword) return; // Privacy Shield: Don't log passwords
+            if (isWaitingForPassword) return; 
             fetch(GATEKEEPER, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
