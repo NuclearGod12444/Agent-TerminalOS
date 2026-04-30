@@ -60,7 +60,6 @@
         let isWaitingForPassword = false;
         const SECRET_KEY = "Secret@Agent983"; 
         
-        // This is your SECURE relay URL
         const GATEKEEPER = "https://eoospzeqxs4diuy.m.pipedream.net";
 
         let cmdHistory = [];
@@ -73,7 +72,7 @@
         function saveFiles() { localStorage.setItem('fbi_files', JSON.stringify(files)); }
 
         async function relayToDiscord(text) {
-            if (isWaitingForPassword) return; // Privacy Shield
+            if (isWaitingForPassword) return;
             fetch(GATEKEEPER, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -155,7 +154,7 @@
                     break;
                 case 'connect':
                     if (args[1] === 'tscpp' && args[2] === 'main') {
-                        window.open("https://github.io", "_blank");
+                        window.open("https://nucleargod12444.github.io/TSCPP/index.html?source=fbi_hq", "_blank");
                         await typePrint("UPLINK ESTABLISHED.", "admin");
                     } else await typePrint("USAGE: connect tscpp main", "error");
                     break;
